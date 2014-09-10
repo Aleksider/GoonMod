@@ -26,3 +26,5 @@ Localization.Hostage_TradeTime = "The police aren't willing to negotiate again y
 Localization.Hostage_TradeAngry = "The police are slightly more willing to negotiate."
 Localization.Hostage_TradeLessAngry = "The police are more willing to negotiate."
 Localization.Hostage_TradeAllowed = "The police are willing to negotiate again."
+
+-- END OF FILE

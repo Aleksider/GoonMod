@@ -229,4 +229,4 @@ function MenuCallbackHandler:toggle_adv_hostage_mode(item)
 	GoonBase.Options:Save()
 end
 
-
+-- END OF FILE
