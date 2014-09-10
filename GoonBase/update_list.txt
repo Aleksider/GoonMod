@@ -1,1 +1,3 @@
 GoonBase/testluafile.lua
+GoonBase/localization.lua
+GoonBase/lua/MenuManager.lua

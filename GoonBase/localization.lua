@@ -2,7 +2,7 @@
 _G.GoonBase.Localization = {}
 local Localization = _G.GoonBase.Localization
 
-Localization.GoonBaseOptionsName = "GoonBase"
+Localization.GoonBaseOptionsName = "GoonBase Update Test"
 Localization.GoonBaseOptionsDesc = "Change your GoonBase preferences"
 
 Localization.OptionsMenu_CorpseToggle = "Use Custom Corpse Amount"
