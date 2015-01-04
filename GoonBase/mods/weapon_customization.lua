@@ -311,18 +311,29 @@ function WeaponCustomization:UpdateWeapon( material_id, pattern_id, tint_color_a
 		return
 	end
 
+	Print("[WC] WeaponCustomization:UpdateWeapon()")
+	Print("[WC] unit_override: ", tostring(unit_override))
+
 	-- Find weapon
 	local weapon_base = unit_override and unit_override:base() or nil
 	if not weapon_base then
 
+		Print("[WC] No unit override specified, searching for unit...")
+		Print("[WC] Local player: ", tostring( managers.player:local_player() ))
+		Print("[WC] Preview unit: ", tostring( self._menu_weapon_preview_unit ), " / alive: ", alive( self._menu_weapon_preview_unit ))
+
 		if managers.player:local_player() then
+			Print("[WC] Found local player, using equipped unit")
 			weapon_base = managers.player:local_player():inventory():equipped_unit():base()
 		end
 		if self._menu_weapon_preview_unit and alive( self._menu_weapon_preview_unit ) then
+			Print("[WC] Found preview unit, using preview unit base")
 			weapon_base = self._menu_weapon_preview_unit:base()
 		end
 
 	end
+
+	Print("[WC] Using weapon base: ", tostring(weapon_base))
 
 	if not weapon_base then
 		Print("[Error] Could not update weapon customization, no weapon unit")
