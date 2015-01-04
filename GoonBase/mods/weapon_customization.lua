@@ -147,6 +147,7 @@ end)
 
 Hooks:Add("MenuSceneManagerSpawnedItemWeapon", "MenuSceneManagerSpawnedItemWeapon_" .. Mod:ID(), function(factory_id, blueprint, texture_switches, spawned_unit)
 
+	Print("[WC] Setting preview unit to: ", tostring(spawned_unit))
 	WeaponCustomization._menu_weapon_preview_unit = spawned_unit
 
 	if WeaponCustomization._is_previewing then
