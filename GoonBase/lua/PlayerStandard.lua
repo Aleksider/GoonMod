@@ -1,5 +1,5 @@
 ----------
--- Payday 2 GoonMod, Weapon Customizer Beta, built on 12/30/2014 6:10:13 PM
+-- Payday 2 GoonMod, Public Release Beta 2, built on 1/10/2015 2:48:18 AM
 -- Copyright 2014, James Wilkinson, Overkill Software
 ----------
 
@@ -12,6 +12,12 @@ function PlayerStandard._check_action_interact(self, t, input)
 		return r
 	end
 	return self.orig._check_action_interact(self, t, input)
+end
+
+Hooks:RegisterHook("PlayerStandardStartMaskUp")
+function PlayerStandard._enter(self, enter_data)
+	self.orig._enter(self, enter_data)
+	Hooks:Call("PlayerStandardStartMaskUp", self, enter_data)
 end
 
 Hooks:RegisterHook("PlayerStandardStartActionEquipWeapon")

@@ -1,5 +1,5 @@
 ----------
--- Payday 2 GoonMod, Public Release Beta 2, built on 1/4/2015 2:00:55 AM
+-- Payday 2 GoonMod, Public Release Beta 2, built on 1/10/2015 2:48:18 AM
 -- Copyright 2014, James Wilkinson, Overkill Software
 ----------
 
@@ -35,6 +35,7 @@ WeaponCustomization._mod_overrides_download_location = "https://github.com/James
 
 -- Load extras
 SafeDoFile( GoonBase.Path .. "mods/weapon_customization_menus.lua" )
+SafeDoFile( GoonBase.Path .. "mods/weapon_customization_part_data.lua" )
 
 -- Localization
 local Localization = GoonBase.Localization
@@ -56,6 +57,9 @@ You may need to restart your game, or load a mission, to fully clear your textur
 Localization.WeaponCustomization_ClearDataAccept = "Clear Data"
 Localization.WeaponCustomization_ClearDataCancel = "Cancel"
 
+Localization.WeaponCustomization_PrintAllPartNames = "Output All Weapon Part Names"
+Localization.WeaponCustomization_PrintAllPartNamesDesc = "Outputs all weapon part names to a CSV file"
+
 Localization.bm_mtl_no_material = "No Material"
 
 -- Options
@@ -71,6 +75,7 @@ if GoonBase.Options.WeaponCustomization == nil then
 	GoonBase.Options.WeaponCustomization.Material = 1
 	GoonBase.Options.WeaponCustomization.HideDiffuse = false
 	GoonBase.Options.WeaponCustomization.HideNormal = false
+	GoonBase.Options.WeaponCustomization.TempShownOverridesNotInstalled = false
 end
 
 -- Menu
@@ -147,7 +152,6 @@ end)
 
 Hooks:Add("MenuSceneManagerSpawnedItemWeapon", "MenuSceneManagerSpawnedItemWeapon_" .. Mod:ID(), function(factory_id, blueprint, texture_switches, spawned_unit)
 
-	Print("[WC] Setting preview unit to: ", tostring(spawned_unit))
 	WeaponCustomization._menu_weapon_preview_unit = spawned_unit
 
 	if WeaponCustomization._is_previewing then
@@ -163,6 +167,12 @@ Hooks:Add("NewRaycastWeaponBasePostAssemblyComplete", "NewRaycastWeaponBasePostA
 end)
 
 Hooks:Add("PlayerStandardStartActionEquipWeapon", "PlayerStandardStartActionEquipWeapon_WeaponCustomization", function(ply, t)
+	if managers.player:local_player() then
+		WeaponCustomization:LoadEquippedWeaponCustomizations( managers.player:local_player():inventory():equipped_unit():base() )
+	end
+end)
+
+Hooks:Add("PlayerStandardStartMaskUp", "PlayerStandardStartMaskUp_WeaponCustomization", function(ply, data)
 	if managers.player:local_player() then
 		WeaponCustomization:LoadEquippedWeaponCustomizations( managers.player:local_player():inventory():equipped_unit():base() )
 	end
@@ -207,6 +217,51 @@ Hooks:Add("BlackMarketGUIOnPopulateMaskMods", "BlackMarketGUIOnPopulateMaskMods_
 end)
 
 -- Functions
+function WeaponCustomization:AddCustomizablePart( part_id )
+	local tbl = clone( WeaponCustomization._default_part_visual_blueprint )
+	tbl.id = part_id
+	tbl.modifying = false
+	table.insert( managers.blackmarket._customizing_weapon_parts, tbl )
+end
+
+function WeaponCustomization:CreateCustomizablePartsList( weapon )
+
+	-- Clear weapon parts
+	managers.blackmarket._customizing_weapon_parts = {}
+	local blueprint_parts = {}
+
+	-- Add blueprint parts
+	for k, v in ipairs( weapon.blueprint ) do
+
+		-- Add blueprint part
+		WeaponCustomization:AddCustomizablePart( v )
+		blueprint_parts[v] = true
+
+		-- Check if part has adds
+		local part_data = tweak_data.weapon.factory.parts[v]
+		if part_data and part_data.adds then
+			for x, y in pairs( part_data.adds ) do
+				WeaponCustomization:AddCustomizablePart( y )
+				blueprint_parts[y] = true
+			end
+		end
+
+	end
+
+	-- Add weapon extra part adds
+	local weapon_data = tweak_data.weapon.factory[ weapon.factory_id ]
+	if weapon_data and weapon_data.adds then
+		for k, v in pairs( weapon_data.adds ) do
+			if blueprint_parts[k] then
+				for x, y in pairs( v ) do
+					WeaponCustomization:AddCustomizablePart( y )
+				end
+			end
+		end
+	end
+
+end
+
 function WeaponCustomization:QueueWeaponUpdate( material_id, pattern_id, tint_color_a, tint_color_b, parts_table )
 
 	if not self._update_queue then
@@ -312,29 +367,18 @@ function WeaponCustomization:UpdateWeapon( material_id, pattern_id, tint_color_a
 		return
 	end
 
-	Print("[WC] WeaponCustomization:UpdateWeapon()")
-	Print("[WC] unit_override: ", tostring(unit_override))
-
 	-- Find weapon
 	local weapon_base = unit_override and unit_override:base() or nil
 	if not weapon_base then
 
-		Print("[WC] No unit override specified, searching for unit...")
-		Print("[WC] Local player: ", tostring( managers.player:local_player() ))
-		Print("[WC] Preview unit: ", tostring( self._menu_weapon_preview_unit ), " / alive: ", alive( self._menu_weapon_preview_unit ))
-
 		if managers.player:local_player() then
-			Print("[WC] Found local player, using equipped unit")
 			weapon_base = managers.player:local_player():inventory():equipped_unit():base()
 		end
 		if self._menu_weapon_preview_unit and alive( self._menu_weapon_preview_unit ) then
-			Print("[WC] Found preview unit, using preview unit base")
 			weapon_base = self._menu_weapon_preview_unit:base()
 		end
 
 	end
-
-	Print("[WC] Using weapon base: ", tostring(weapon_base))
 
 	if not weapon_base then
 		Print("[Error] Could not update weapon customization, no weapon unit")
@@ -519,6 +563,16 @@ function WeaponCustomization:LoadCurrentWeaponCustomization( category, slot )
 		return
 	end
 
+	-- Create default blueprint if it doesn't exist
+	if not weapon.visual_blueprint then
+		weapon.visual_blueprint = {}
+		local weapon = managers.blackmarket._global.crafted_items[category][slot]
+		for k, v in pairs( weapon.blueprint ) do
+			weapon.visual_blueprint[v] = clone( WeaponCustomization._default_part_visual_blueprint )
+		end
+	end
+
+	-- Load and apply blueprint
 	WeaponCustomization:LoadWeaponCustomizationFromBlueprint( weapon.visual_blueprint )
 
 end
@@ -526,6 +580,7 @@ end
 function WeaponCustomization:LoadWeaponCustomizationFromBlueprint( blueprint, unit_override )
 
 	if not blueprint then
+		blueprint = clone( WeaponCustomization._default_part_visual_blueprint )
 		Print("[Warning] Could not load weapon customization, no visual blueprint specified")
 		return
 	end

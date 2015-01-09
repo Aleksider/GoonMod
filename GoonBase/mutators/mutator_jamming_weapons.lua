@@ -1,5 +1,5 @@
 ----------
--- Payday 2 GoonMod, Weapon Customizer Beta, built on 12/30/2014 6:10:13 PM
+-- Payday 2 GoonMod, Public Release Beta 2, built on 1/10/2015 2:48:18 AM
 -- Copyright 2014, James Wilkinson, Overkill Software
 ----------
 
@@ -20,7 +20,7 @@ function Mutator:OnEnabled()
 
 	Hooks:Add("NewRaycastWeaponBaseInit", self._WeaponFirehkID, function(weapon, unit) 
 
-		Hooks:PostHook(NewRaycastWeaponBase, self._WeaponFirehkIDPost, function(weapon, from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul, target_unit)
+		Hooks:PostHook(NewRaycastWeaponBase, "fire", self._WeaponFirehkIDPost, function(weapon, from_pos, direction, dmg_mul, shoot_player, spread_mul, autohit_mul, suppr_mul, target_unit)
 			local roll = math.rand(1)
 			local chance = 0.12
 			local gun = weapon.parent_weapon and weapon.parent_weapon:base() or weapon
